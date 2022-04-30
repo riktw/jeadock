@@ -1,0 +1,233 @@
+diff --git a/arch/riscv/dts/Makefile b/arch/riscv/dts/Makefile
+index 0558b8cad6..894795748a 100644
+--- a/arch/riscv/dts/Makefile
++++ b/arch/riscv/dts/Makefile
+@@ -11,7 +11,8 @@ dtb-$(CONFIG_TARGET_SUNXI) += \
+ 	sun20i-d1-lichee-rv.dtb \
+ 	sun20i-d1-lichee-rv-86-panel.dtb \
+ 	sun20i-d1-lichee-rv-dock.dtb \
+-	sun20i-d1-nezha.dtb
++	sun20i-d1-nezha.dtb \
++	sun20i-jeadock.dtb
+ 
+ include $(srctree)/scripts/Makefile.dts
+ 
+diff --git a/arch/riscv/dts/sun20i-jeadock.dts b/arch/riscv/dts/sun20i-jeadock.dts
+new file mode 100644
+index 0000000000..91bec927fe
+--- /dev/null
++++ b/arch/riscv/dts/sun20i-jeadock.dts
+@@ -0,0 +1,213 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Samuel Holland <samuel@sholland.org>
++
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/pwm/pwm.h>
++#include "sun20i-d1-lichee-rv.dts"
++
++/ {
++	model = "Sipeed Lichee RV Foxdock";
++	compatible = "sipeed,lichee-rv-foxdock", "sipeed,lichee-rv",
++		     "allwinner,sun20i-d1";
++
++	aliases {
++		ethernet0 = &emac;
++		mmc1 = &mmc1;
++		spi0 = &spi0;
++		i2c2 = &i2c2;
++		serial1 = &uart1;
++		serial4 = &uart4;
++		serial5 = &uart5;
++	};
++
++	dmic-card {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,dai-link@0 {
++			format = "pdm";
++			frame-master = <&link0_cpu>;
++			bitclock-master = <&link0_cpu>;
++
++			link0_cpu: cpu {
++				sound-dai = <&dmic>;
++			};
++
++			link0_codec: codec {
++				sound-dai = <&dmic_codec>;
++			};
++		};
++	};
++
++	dmic_codec: dmic-codec {
++		compatible = "dmic-codec";
++		num-channels = <1>;
++		#sound-dai-cells = <0>;
++	};
++
++	hdmi_connector: connector {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con_in: endpoint {
++				remote-endpoint = <&hdmi_out_con>;
++			};
++		};
++	};
++
++};
++
++&codec {
++	allwinner,routing = "Internal Speaker", "HPOUTL",
++			    "Internal Speaker", "HPOUTR",
++			    "LINEINL", "HPOUTL",
++			    "LINEINR", "HPOUTR",
++			    "MICIN3", "Internal Microphone",
++			    "Internal Microphone", "HBIAS";
++	allwinner,widgets = "Microphone", "Internal Microphone",
++			    "Speaker", "Internal Speaker";
++	status = "okay";
++};
++
++&ehci0 {
++	status = "okay";
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++
++&emac {
++	pinctrl-0 = <&rmii_pe_pins>;
++	pinctrl-names = "default";
++	phy-handle = <&ext_rmii_phy>;
++	phy-mode = "rmii";
++	phy-supply = <&reg_vcc_3v3>;
++	status = "okay";
++};
++
++&gpio {
++
++	pwm0_pd16_pin: pwm0-pd16-pin {
++		pins = "PD16";
++		function = "pwm";
++	};
++
++	pwm1_pd17_pin: pwm1-pd17-pin {
++		pins = "PD17";
++		function = "pwm";
++	};
++
++	pwm2_pd18_pin: pwm2-pd18-pin {
++		pins = "PD18";
++		function = "pwm";
++	};
++
++	uart4_pb_pins: uart4-pb-pins {
++		pins = "PB2", "PB3";
++		function = "uart4";
++	};
++
++	uart5_pb_pins: uart5-pb-pins {
++		pins = "PB4", "PB5";
++		function = "uart4";
++	};
++};
++
++&hdmi {
++	status = "okay";
++
++	port {
++		hdmi_out_con: endpoint {
++			remote-endpoint = <&hdmi_con_in>;
++		};
++	};
++};
++
++&hdmi_phy {
++	status = "okay";
++};
++
++&mdio {
++	ext_rmii_phy: ethernet-phy@1 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <1>;
++		reset-gpios = <&gpio 4 16 GPIO_ACTIVE_LOW>; /* PE16 */
++	};
++};
++
++&mmc1 {
++	bus-width = <4>;
++	broken-cd;
++	vmmc-supply = <&reg_vcc_3v3>;
++	vqmmc-supply = <&reg_vcc_3v3>;
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
++	max-frequency = <15000000>;
++	status = "okay";
++};
++
++&ohci0 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&spi1 {
++	pinctrl-0 = <&spi1_pd_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++	flash@0 {
++		compatible = "winbond,w25q128",
++					"jedec,spi-nor";
++		reg = <0>;
++	};
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_vcc>;
++};
++
++&i2c2 {
++	pinctrl-0 = <&i2c2_pb0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-0 = <&uart1_pg6_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++
++// uart 4 and 5 are on the IO pinheader
++&uart4 {
++	pinctrl-0 = <&uart4_pb_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&uart5 {
++	pinctrl-0 = <&uart5_pb_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++//3 pwm pins on IO pinheader
++&pwm {
++	pinctrl-0 = <&pwm0_pd16_pin>, <&pwm1_pd17_pin>, <&pwm2_pd18_pin>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-0 = <&spi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
